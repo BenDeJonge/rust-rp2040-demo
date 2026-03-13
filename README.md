@@ -56,14 +56,13 @@ $ cargo add cortex-m-rt rp2040-boot2
 
 - Setup the [memory map](memory.x) for the used hardware, as specified in the
   datasheet. This should include at least the start of the RAM and FLASH
-  memories.
+  memories. Since a second-stage bootloader is used, this is also added.
 
 - If you _do not_ want to use [probe.rs](https://probe.rs/) hardware, switch to
   the [`elf2uf2-rs`](https://crates.io/crates/elf2uf2-rs) runner using
-  `cargo build` compiler flags with `rust-analyzer`. Using this more low-level
-  runner, specific for RP Pico devices. (If there is an error that `libudev`
-  cannot be found, install it with `$pacman -Syu systemd-libs`. This might be
-  quite esoteric but I am writing this on a
+  `cargo build` compiler flags with `rust-analyzer`. (If there is an error that
+  `libudev` cannot be found, install it with `$pacman -Syu systemd-libs`. This
+  might be quite esoteric but I am writing this on a
   [Steam Deck](https://store.steampowered.com/steamdeck) of all things...)
 
 ```bash
@@ -84,39 +83,25 @@ $ cargo install cargo-binutils
 $ cargo size -- -Ax # test command
 ```
 
+<!-- automatically mount specific drives.
+https://forum.manjaro.org/t/root-tip-how-to-use-systemd-to-mount-any-device/1185
+ -->
+
 ### Testing the workflow
 
-- Prepare dummy `main.rs`.
-
-```rust
-#![no_std]
-#![no_main]
-use core::panic::PanicInfo;
-use cortex_m_rt::entry;
-/// The linker will place this boot block at the start of our program image. We
-/// need this to help the ROM bootloader get our code up and running.
-/// Note: This boot block is not necessary when using a rp-hal based BSP
-/// as the BSPs already perform this step.
-#[link_section = ".boot2"]
-#[used]
-pub static BOOT2: [u8; 256] = rp2040_boot2::BOOT_LOADER_GENERIC_03H;
-#[entry]
-fn main() -> ! { loop {} }
-#[panic_handler]
-fn panic(\_i: &PanicInfo) -> ! { loop {} }
-```
-
+- Prepare [hello world `main.rs`](examples/hello_world/main.rs).
 - Test the build process.
 
 ```bash
-$ cargo build
+$ cargo build --example hello_world
 ```
 
 - Reset the device with the button combination: `RESET -> RESET + BOOT -> BOOT`.
+  If needed, mount the device.
 - Embed the code onto the device.
 
 ```bash
-$ cargo run --release
+$ cargo run --release examples/hello_world/main.rs
 ```
 
 Alternatively, if you have a `probe.rs` debugger, use
@@ -125,8 +110,18 @@ Alternatively, if you have a `probe.rs` debugger, use
 $ cargo embed --chip Cortex-M0+
 ```
 
-## Sources [WaveShare RP2040-Zero](https://www.waveshare.com/wiki/RP2040-Zero)
+### Develop and flash the actual binary
 
+- Embed a newly developed version of [`main.rs`](src/main.rs) onto hardware.
+
+```bash
+$ cargo build
+$ cargo run --release
+```
+
+## Sources
+
+- [WaveShare RP2040-Zero](https://www.waveshare.com/wiki/RP2040-Zero)
 - [RP2040 datasheet](https://pip-assets.raspberrypi.com/categories/814-rp2040/documents/RP-008371-DS-1-rp2040-datasheet.pdf?disposition=inline)
 - [ARMv6-M reference](https://users.ece.utexas.edu/~valvano/mspm0/Arm_Architecture_v6m_Reference_Manual.pdf)
 - [RustC platform support for `thumbv6n-none-eabi`](https://doc.rust-lang.org/beta/rustc/platform-support/thumbv6m-none-eabi.html)

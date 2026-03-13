@@ -6,3 +6,6 @@ edition = "2024"
 [dependencies]
 cortex-m-rt = "0.7.5"
 rp2040-boot2 = "0.3.0"
+
+[[example]]
+name = "hello_world"
