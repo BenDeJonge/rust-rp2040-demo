@@ -101,7 +101,7 @@ $ cargo build --example hello_world
 - Embed the code onto the device.
 
 ```bash
-$ cargo run --release examples/hello_world/main.rs
+$ cargo run --release --example hello_world
 ```
 
 Alternatively, if you have a `probe.rs` debugger, use
